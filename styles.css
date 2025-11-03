@@ -1,4 +1,3 @@
-
 :root{
   --bg:#EF7C1C;
   --text:#F4F9FF;
@@ -26,7 +25,11 @@ html,body{
 }
 .logo-center{display:flex; justify-content:center; align-items:center; margin-bottom:8px}
 .logo{height:44px; object-fit:contain}
-.detail-mode .header { border-bottom: none; }
+
+/* 상세 모드에선 공용 헤더 라인/여백 제거 (이중라인 방지) */
+.detail-mode .header{ border-bottom:none !important; }
+.detail-mode .logo-center{ margin-bottom:0 !important; }
+.detail-mode .toolbar{ display:none !important; }
 
 /* ===== TOOLBAR (Search + Chips) ===== */
 .toolbar{padding:0 12px 8px}
@@ -98,7 +101,7 @@ html,body{
   margin-top:24px;
 }
 
-/* ===== DETAIL MODE ===== */
+/* ===== DETAIL HEADER ===== */
 .detail-header{display:none}
 .detail-header.hidden{display:none !important}
 
@@ -123,7 +126,7 @@ html,body{
 }
 .btn.back:active{transform:translateY(1px); opacity:.95}
 
-/* DETAIL CONTENT */
+/* ===== DETAIL CONTENT ===== */
 .detail-card{padding:14px 16px 24px}
 .d-cover{
   width:100%; max-width:560px; aspect-ratio:1/1; object-fit:cover;
@@ -139,6 +142,6 @@ html,body{
 .d-tracks li{padding:12px 14px; border-bottom:1px solid var(--line); font-size:14px; color:#fff}
 .d-tracks li:last-child{border-bottom:none}
 
-/* DETAIL FIX */
+/* ===== HARD FIXES (전환 깨짐 방지) ===== */
 .hidden{display:none !important}
 #detailPage.hidden{display:none !important}
