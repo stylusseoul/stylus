@@ -61,7 +61,7 @@ html,body{
 
 /* ===== LIST ===== */
 .count{padding:10px 12px; color:var(--text-dim); font-size:13px}
-.list{padding:0 8px 84px}
+.list{padding:0 8px 24px}
 .row{
   display:flex; gap:12px; align-items:center;
   padding:10px 10px; margin:10px 0;
@@ -82,18 +82,21 @@ html,body{
 }
 
 /* LOAD MORE */
-.more-wrap{display:flex; justify-content:center; padding:8px 12px 96px}
+.more-wrap{display:flex; justify-content:center; padding:8px 12px 24px}
 .more-wrap .btn{min-width:120px}
 
-/* FOOTER */
+/* FOOTER (일반 흐름, 플로팅 제거) */
 .footer{
-  position:fixed; bottom:0; left:0; right:0;
-  background:var(--bg); padding:14px 12px 18px; text-align:center;
-  border-top:1px solid var(--line); color:var(--text-dim);
+  position:static;
+  background:var(--bg);
+  padding:16px 12px 20px;
+  text-align:center;
+  border-top:1px solid var(--line);
+  color:var(--text-dim);
+  margin-top:24px;
 }
 
 /* ===== DETAIL MODE ===== */
-/* 메인에서는 뒤로가기 헤더 숨김 */
 .detail-header{display:none}
 .detail-header.hidden{display:none !important}
 
@@ -108,7 +111,7 @@ html,body{
   backdrop-filter: blur(4px);
 }
 
-/* 뒤로가기 버튼 위치 조정 */
+/* 뒤로가기 버튼 */
 .btn.back{
   height:auto; line-height:1; padding:10px 14px;
   border-radius:999px; border:1px solid var(--line);
@@ -119,7 +122,7 @@ html,body{
 .btn.back:active{transform:translateY(1px); opacity:.95}
 
 /* DETAIL CONTENT */
-.detail-card{padding:14px 16px 96px}
+.detail-card{padding:14px 16px 24px}
 .d-cover{
   width:100%; max-width:560px; aspect-ratio:1/1; object-fit:cover;
   border-radius:12px; border:1px solid var(--line);
@@ -133,3 +136,6 @@ html,body{
 }
 .d-tracks li{padding:12px 14px; border-bottom:1px solid var(--line); font-size:14px; color:#fff}
 .d-tracks li:last-child{border-bottom:none}
+
+/* DEBUG: 강제 display 조정 */
+.hidden{display:none !important}
