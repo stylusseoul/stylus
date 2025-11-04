@@ -151,3 +151,14 @@ body:not(.detail-mode) .brandbar .btn.back{ visibility: hidden; }
   stroke-linecap:round;
   stroke-linejoin:round;
 }
+
+
+/* === PATCH v3.3: 장르 칩(chips)과 앨범 수(count) 사이 간격 균형 === */
+.filters {
+  margin-bottom: 14px; /* 장르 그룹 전체 아래 여백 */
+}
+
+.count {
+  padding-top: 0;      /* 위 패딩 제거 */
+  margin-top: 14px;    /* chips 하단과 균등한 거리 확보 */
+}
