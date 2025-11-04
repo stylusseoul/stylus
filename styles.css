@@ -113,3 +113,14 @@ body:not(.detail-mode) .brandbar .btn.back{ visibility: hidden; }
 
 /* 디테일 카드 상단 여백을 divider와 균형 맞춤 */
 .detail-mode .detail-card{ padding-top: 12px; } /* divider 아래 여백과 동일 */
+
+
+/* === PATCH v3: SVG 화살표 백버튼 === */
+.brandbar .btn.back svg {
+  width: 28px;
+  height: 28px;
+  stroke: var(--text);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
