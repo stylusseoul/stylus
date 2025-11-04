@@ -1,289 +1,154 @@
-// ---------- STATE ----------
+// Stylus Vinyl — script.js (v10.9_stable)
+// - 영어 헤더 기준 (Artist / Album / Year / Genre / Cover / Tracks)
+// - 데이터 로드 후 렌더 타이밍 보장
+// - config.js 불필요 (URL 내장)
+// - like 검색, 50개씩 로딩, 상세/뒤로가기 안정화
+
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXikyTZ6Abe3Ome-3JYTQK83jSC7vpQXKBPqLuGhNLVmn_1Dzh48iVB77w_9GbUCHO4VuK2K3LZ48P/pub?output=csv";
+const COVER_PLACEHOLDER = "images/placeholder.png";
+
 const state = {
   data: [],
   filtered: [],
   filters: { genres: new Set() },
-  limit: 50,         // 1페이지 50개
-  currentItem: null, // 상세에 보여줄 선택 항목
+  limit: 50,
+  currentItem: null,
 };
 
-// ---------- DOM ----------
-const listPage   = document.getElementById('listPage');
+// DOM refs
+const listPage = document.getElementById('listPage');
 const detailPage = document.getElementById('detailPage');
-const toolbar    = document.getElementById('toolbar');
-const detailHdr  = document.getElementById('detailHeader');
-
-const listEl   = document.getElementById('list');
-const inputEl  = document.getElementById('searchInput');
-const btnSearch= document.getElementById('btnSearch');
+const toolbar = document.getElementById('toolbar');
+const detailHdr = document.getElementById('detailHeader');
+const listEl = document.getElementById('list');
+const inputEl = document.getElementById('searchInput');
+const btnSearch = document.getElementById('btnSearch');
 const btnReset = document.getElementById('btnReset');
 const genreChips = document.getElementById('genreChips');
-const countEl  = document.getElementById('count');
+const countEl = document.getElementById('count');
 const moreWrap = document.getElementById('moreWrap');
-
 const dCover = document.getElementById('dCover');
 const dAlbum = document.getElementById('dAlbum');
-const dArtist= document.getElementById('dArtist');
-const dTracks= document.getElementById('dTracks');
-const btnBack= document.getElementById('btnBack');
+const dArtist = document.getElementById('dArtist');
+const dTracks = document.getElementById('dTracks');
+const btnBack = document.getElementById('btnBack');
+const appHeader = document.querySelector('.header');
 
-const appHeader = document.querySelector('.header'); // 공용 헤더(로고 포함)
-
-// ---------- CONFIG (config.js에서 주입 필요) ----------
-// 기대: window.SHEET_CSV_URL, window.COVER_PLACEHOLDER
-const SHEET_CSV_URL = window.SHEET_CSV_URL;
-const COVER_PLACEHOLDER = window.COVER_PLACEHOLDER || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
-// ---------- HELPERS ----------
-function toArray(s){
-  if(Array.isArray(s)) return s;
-  if(!s) return [];
-  return s.split(/\s*;\s*|\s*·\s*|\s*\|\s*|\s*,\s*/).filter(Boolean);
+// --- Helpers ---
+function toArray(s) {
+  if (!s) return [];
+  return s.split(/;|·|\||,/).map(x => x.trim()).filter(Boolean);
+}
+function mapRow(row) {
+  return {
+    artist: row["Artist"]?.trim() || "",
+    album: row["Album"]?.trim() || "",
+    year: String(row["Year"] || ""),
+    genre: row["Genre"]?.trim() || "",
+    cover: row["Cover"]?.trim() || "",
+    tracks: toArray(row["Tracks"]),
+  };
+}
+function proxify(url, { w = null, h = null, fit = 'cover' } = {}) {
+  if (!url) return "";
+  let clean = String(url).replace(/^https?:\/\//, '');
+  let q = `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&fit=${fit}`;
+  if (w) q += `&w=${w}`;
+  if (h) q += `&h=${h}`;
+  return q;
 }
 
-function mapRow(row){
-  const get = (k)=> row.hasOwnProperty(k) ? row[k] : (row[k?.toLowerCase?.()] ?? row[k?.toUpperCase?.()] ?? '');
-  const artist = get('Artist');
-  const album  = get('Album');
-  const year   = String(get('Year')||'');
-  const genre  = get('Genre');
-  const cover  = get('Cover') || get('F') || get('cover') || get('COVER');
-  const tracks = toArray(get('Tracks'));
-  return { artist, album, year, genre, cover, tracks };
-}
-
-async function fetchCSV(){
-  return new Promise((resolve, reject)=>{
+// --- Core ---
+async function fetchCSV() {
+  return new Promise((resolve, reject) => {
     Papa.parse(SHEET_CSV_URL, {
-      download: true, header: true, skipEmptyLines: true,
-      complete: ({data}) => resolve(data.map(mapRow)),
-      error: reject
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: res => resolve(res.data.map(mapRow)),
+      error: reject,
     });
   });
 }
-
-function isValidItem(it){
-  const hasAlbum  = (it.album || '').trim() !== '';
-  const hasArtist = (it.artist || '').trim() !== '';
-  const notStatus = !((it.album || '').trim().toUpperCase() === 'OK' || (it.artist || '').trim().toUpperCase() === 'OK');
-  return (hasAlbum || hasArtist) && notStatus;
+function isValid(it) {
+  return (it.album || it.artist) && it.album.toUpperCase() !== "OK";
 }
-
-function defaultSortByArtist(arr){
-  arr.sort((a,b)=>(a.artist||'').localeCompare(b.artist||'', 'ko', {sensitivity:'base'}));
-}
-
-// Discogs 이미지 프록시 (트래픽 절약)
-function proxify(rawUrl, { w=null, h=null, fit='cover' } = {}){
-  if(!rawUrl) return '';
-  let s = String(rawUrl).trim().replace(/&amp;/g, '&');
-  if (s.startsWith('//')) s = 'https:' + s;
-  const core = s.replace(/^https?:\/\//, '');
-  let q = `https://images.weserv.nl/?url=${encodeURIComponent(core)}`;
-  if (w) q += `&w=${w}`;
-  if (h) q += `&h=${h}`;
-  q += `&fit=${fit}`;
-  return q;
-}
-const coverThumb = (u)=> proxify(u, { w:150, h:150, fit:'cover' });
-const coverLarge = (u)=> proxify(u, { w:900, h:900, fit:'contain' });
-
-// ---------- FILTER ----------
-function matchesQuery(item, q){
-  if(!q) return true;
-  const hay = [(item.album||''), (item.artist||''), (item.tracks||[]).join(' '), (item.genre||'')].join(' ').toLowerCase();
-  return hay.includes(q);
-}
-function matchesFilters(item){
-  const gs = state.filters.genres;
-  return gs.size ? gs.has((item.genre||'').trim()) : true;
-}
-function applyFilters(){
-  const q = (inputEl.value||'').trim().toLowerCase();
-  state.filtered = state.data
-    .filter(isValidItem)
-    .filter(it => matchesQuery(it, q) && matchesFilters(it));
-  defaultSortByArtist(state.filtered);
+function applyFilters() {
+  const q = inputEl.value.toLowerCase();
+  state.filtered = state.data.filter(it => {
+    if (!isValid(it)) return false;
+    const hay = `${it.artist} ${it.album} ${it.tracks.join(' ')} ${it.genre}`.toLowerCase();
+    return hay.includes(q);
+  });
   state.limit = 50;
   renderList();
 }
-function clearAll(){
-  inputEl.value = '';
-  state.filters.genres.clear();
-  Array.from(genreChips.children).forEach(c=> c.classList.remove('active'));
-  applyFilters();
-  inputEl.focus();
-}
-function buildGenreChips(){
-  const set = new Set(state.data.map(d=> (d.genre||'').trim()).filter(Boolean));
-  const items = [...set].sort((a,b)=> a.localeCompare(b, 'ko', {sensitivity:'base'}));
-  genreChips.innerHTML='';
-  items.forEach(val=>{
-    const btn = document.createElement('button');
-    btn.className = 'chip';
-    btn.textContent = val;
-    btn.addEventListener('click', ()=>{
-      if(state.filters.genres.has(val)) state.filters.genres.delete(val);
-      else state.filters.genres.add(val);
-      btn.classList.toggle('active');
-      applyFilters();
-    });
-    genreChips.appendChild(btn);
-  });
-}
-
-// ---------- RENDER ----------
-function renderList(){
+function renderList() {
   const total = state.filtered.length;
-  const shown = Math.min(state.limit, total);
-  countEl.textContent = `${total}개 앨범 중 ${shown}개 표시`;
+  const shown = Math.min(total, state.limit);
+  countEl.textContent = `${total}개 중 ${shown}개 표시`;
+  listEl.innerHTML = "";
 
-  listEl.innerHTML = '';
   const frag = document.createDocumentFragment();
-  state.filtered.slice(0, shown).forEach((item) => {
-    const row = document.createElement('article'); row.className = 'row'; row.tabIndex = 0;
-    row.addEventListener('click', ()=> openDetail(item));
-    row.addEventListener('keydown', (e)=>{ if(e.key==='Enter') openDetail(item); });
-
-    const img = document.createElement('img'); img.className='thumb'; img.loading='lazy';
-    img.src = coverThumb(item.cover) || COVER_PLACEHOLDER;
-    img.onerror = () => { img.src = COVER_PLACEHOLDER; };
-
-    const info = document.createElement('div'); info.className='info';
-    const album = document.createElement('p'); album.className='album'; album.textContent = item.album || '(제목 없음)';
-    const artist = document.createElement('p'); artist.className='artist'; artist.textContent = item.artist || '';
-    const meta = document.createElement('p'); meta.className='meta'; meta.textContent = [item.year, item.genre].filter(Boolean).join(' · ');
-    const tracks = document.createElement('p'); tracks.className='tracks'; tracks.textContent = (item.tracks||[]).join(' · ');
-
-    info.appendChild(album);
-    info.appendChild(artist);
-    info.appendChild(meta);
-    info.appendChild(tracks);
-    row.appendChild(img);
-    row.appendChild(info);
+  state.filtered.slice(0, shown).forEach(it => {
+    const row = document.createElement('article');
+    row.className = 'row';
+    row.innerHTML = `
+      <img class="thumb" src="${proxify(it.cover, { w:150, h:150 }) || COVER_PLACEHOLDER}" loading="lazy" alt="">
+      <div class="info">
+        <p class="album">${it.album}</p>
+        <p class="artist">${it.artist}</p>
+        <p class="meta">${[it.year, it.genre].filter(Boolean).join(' · ')}</p>
+        <p class="tracks">${it.tracks.slice(0,3).join(' · ')}</p>
+      </div>`;
+    row.addEventListener('click', () => openDetail(it));
     frag.appendChild(row);
   });
   listEl.appendChild(frag);
 
-  // load more
-  moreWrap.innerHTML = '';
-  if (shown < total){
-    const more = document.createElement('button');
-    more.id = 'btnLoadMore';
-    more.className = 'btn primary';
-    more.textContent = '더보기';
-    more.addEventListener('click', ()=>{
-      state.limit += 50;
-      renderList();
-    });
-    moreWrap.appendChild(more);
+  moreWrap.innerHTML = "";
+  if (shown < total) {
+    const btn = document.createElement('button');
+    btn.textContent = "더보기";
+    btn.className = "btn primary";
+    btn.onclick = () => { state.limit += 50; renderList(); };
+    moreWrap.appendChild(btn);
   }
 }
-
-// ---------- DETAIL ----------
-function renderDetail(item){
-  const base = item.cover || '';
-  dCover.loading = 'lazy';
-  dCover.src = proxify(base, { w:900, h:900, fit:'contain' }) || COVER_PLACEHOLDER;
-  dCover.srcset = [
-    proxify(base, { w:320,  h:320,  fit:'contain' }) + ' 320w',
-    proxify(base, { w:640,  h:640,  fit:'contain' }) + ' 640w',
-    proxify(base, { w:900,  h:900,  fit:'contain' }) + ' 900w',
-    proxify(base, { w:1200, h:1200, fit:'contain' }) + ' 1200w'
-  ].join(', ');
-  dCover.sizes = '(max-width: 420px) 90vw, 560px';
-  dCover.onerror = () => { dCover.src = COVER_PLACEHOLDER; dCover.removeAttribute('srcset'); };
-
-  dAlbum.textContent = item.album || '';
-  dArtist.textContent = item.artist || '';
-  dTracks.innerHTML = '';
-  (item.tracks||[]).forEach(t => {
-    const li = document.createElement('li');
-    li.textContent = t;
-    dTracks.appendChild(li);
-  });
+function renderDetail(it) {
+  dCover.src = proxify(it.cover, { w:900, h:900 }) || COVER_PLACEHOLDER;
+  dAlbum.textContent = it.album;
+  dArtist.textContent = it.artist;
+  dTracks.innerHTML = it.tracks.map(t => `<li>${t}</li>`).join('');
 }
-
-function openDetail(item){
-  state.currentItem = item || null;
-  if (state.currentItem) renderDetail(state.currentItem);
-
-  // 화면 전환
+function openDetail(it) {
+  renderDetail(it);
   listPage.classList.add('hidden');
   toolbar.classList.add('hidden');
   detailPage.classList.remove('hidden');
   detailHdr.classList.remove('hidden');
   document.body.classList.add('detail-mode');
-
-  // 공용 헤더 라인 제거(보조)
-  if (appHeader) appHeader.style.borderBottom = 'none';
-
-  location.hash = '#detail';
 }
-
-function backToList(){
-  state.currentItem = null;
-
-  detailPage.classList.add('hidden');
-  detailHdr.classList.add('hidden');
+function backToList() {
   listPage.classList.remove('hidden');
   toolbar.classList.remove('hidden');
+  detailPage.classList.add('hidden');
+  detailHdr.classList.add('hidden');
   document.body.classList.remove('detail-mode');
-
-  // 공용 헤더 라인 복구(보조)
-  if (appHeader) appHeader.style.borderBottom = '1px solid rgba(255,255,255,0.28)';
-
-  location.hash = '#list';
 }
 
-// ---------- ROUTER (해시 기반 화면 상태 강제) ----------
-function enforceRoute(){
-  const h = (location.hash || '').toLowerCase();
-  if (h === '#detail'){
-    // 항목 없이 직접 상세 해시로 들어온 경우: 목록으로 복귀
-    if (!state.currentItem){
-      backToList();
-      return;
-    }
-    // 상세 상태 보장
-    listPage.classList.add('hidden');
-    toolbar.classList.add('hidden');
-    detailPage.classList.remove('hidden');
-    detailHdr.classList.remove('hidden');
-    document.body.classList.add('detail-mode');
-    if (appHeader) appHeader.style.borderBottom = 'none';
-  }else{
-    // 기본: 목록 상태 보장
-    backToList();
-  }
+// --- Init ---
+async function init() {
+  countEl.textContent = "불러오는 중…";
+  const data = await fetchCSV();
+  state.data = data.filter(isValid);
+  state.filtered = [...state.data];
+  renderList();
+  countEl.textContent = `${state.filtered.length}개 앨범`;
 }
 
-// ---------- INIT ----------
-async function load(){
-  try{
-    countEl.textContent = '불러오는 중…';
-    const data = await fetchCSV();
-    state.data = data.filter(isValidItem);
-    defaultSortByArtist(state.data);
-    state.filtered = state.data.slice();
-    buildGenreChips();
-    renderList();
+btnSearch.onclick = applyFilters;
+btnReset.onclick = () => { inputEl.value = ""; applyFilters(); };
+btnBack.onclick = backToList;
 
-    // 초기 라우트 강제
-    enforceRoute();
-  }catch(e){
-    document.body.insertAdjacentHTML('beforeend', `<div style="color:#300;padding:10px;background:#fff8;border-top:1px solid #900">불러오기 실패: ${e.message}</div>`);
-  }
-}
-
-// Events
-btnSearch.addEventListener('click', applyFilters);
-inputEl.addEventListener('input', applyFilters);
-inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter') applyFilters(); });
-btnReset.addEventListener('click', clearAll);
-btnBack.addEventListener('click', backToList);
-
-window.addEventListener('hashchange', enforceRoute);
-
-// GO
-load();
+init();
