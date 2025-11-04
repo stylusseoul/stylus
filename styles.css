@@ -124,3 +124,30 @@ body:not(.detail-mode) .brandbar .btn.back{ visibility: hidden; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+
+/* === PATCH v3.2: 테두리 있는 백버튼 & 아이콘 크기 보정 === */
+.brandbar .btn.back{
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.4);
+  border-radius: 10px;
+  color: var(--text);
+  transition: all .15s ease;
+}
+.brandbar .btn.back:hover,
+.brandbar .btn.back:active{
+  background: rgba(255,255,255,0.18);
+  border-color: #fff;
+}
+.brandbar .btn.back svg{
+  width:30px;
+  height:30px;
+  stroke: var(--text);
+  stroke-width:3.2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
