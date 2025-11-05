@@ -201,3 +201,31 @@ body:not(.detail-mode) .brandbar .btn.back{ visibility: hidden; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* === PATCH v3.6: 푸터 플로팅 제거 + 하단 여백 축소 === */
+
+/* 푸터를 문서 흐름으로 되돌리기 */
+.footer {
+  position: static !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  color: var(--text-dim);
+  padding: 12px 12px 14px !important; /* 여백 살짝 줄임 */
+  text-align: center;
+  margin-top: 10px !important;
+  z-index: auto !important;
+}
+
+/* 리스트 / 상세 카드 하단 패딩 줄이기 */
+.list {
+  padding-bottom: 48px !important; /* 기존 84px → 48px */
+}
+.more-wrap {
+  padding-bottom: 60px !important; /* 기존 96px → 60px */
+}
+.detail-card {
+  padding-bottom: 60px !important; /* 기존 96px → 60px */
+}
