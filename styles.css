@@ -56,8 +56,17 @@ html,body{margin:0;padding:0;min-height:100%;background:var(--bg);color:var(--te
 .more-wrap{display:flex;justify-content:center;padding:8px 12px 96px}
 .more-wrap .btn{min-width:120px}
 
-.footer{position:static;bottom:0;left:0;right:0;background:var(--bg);padding:14px 12px 18px;text-align:center;border-top:1px solid var(--line);color:var(--text-dim)}
-
+.footer {
+  position: static !important;   /* 문서 흐름에 따라 배치 */
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: 100%;
+  border-top: 1px solid var(--line); /* 필요 시 삭제 가능 */
+  background: var(--bg);            /* 배경색 유지 */
+  padding: 16px 0;                  /* 상하 여백 */
+  z-index: auto !important;
+}
 .hidden{display:none}
 
 /* detail-mode: 헤더 라인 제거, 상세헤더에만 라인 */
