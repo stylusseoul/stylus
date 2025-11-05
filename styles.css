@@ -229,3 +229,19 @@ body:not(.detail-mode) .brandbar .btn.back{ visibility: hidden; }
 .detail-card {
   padding-bottom: 60px !important; /* 기존 96px → 60px */
 }
+/* === PATCH v3.8: 장르칩/라인/결과 텍스트 간격 균형 조정 === */
+
+/* 1️⃣ 장르칩(chips)과 아래 라인(divider) 사이 여백 절반으로 축소 */
+.filters {
+  margin-bottom: 6px !important;   /* 기존 대비 약 절반 수준으로 축소 */
+}
+
+/* 2️⃣ 라인(divider) 아래의 'xx개 앨범 중' 텍스트 위쪽 여백 살짝 늘림 */
+.divider {
+  margin-bottom: 10px !important;  /* 라인 아래 간격 */
+}
+
+.count {
+  margin-top: 8px !important;      /* 라인과 텍스트 사이 거리 확보 */
+  padding-top: 2px !important;     /* 내부 여백 약간 */
+}
